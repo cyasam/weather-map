@@ -37,7 +37,7 @@ class App extends Component {
   }
 
   createMarkers({ lat, lon, icon }) {
-    const iconBase = 'http://openweathermap.org/img/w';
+    const iconBase = 'https://openweathermap.org/img/w';
     const iconSize = {
       width: 50,
       height: 50,
