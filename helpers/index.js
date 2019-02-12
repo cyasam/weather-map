@@ -25,5 +25,5 @@ export const googleMapInit = () =>
   });
 
 export const appReq = axios.create({
-  baseURL: 'http://localhost:3001/api',
+  baseURL: 'http://192.168.1.13:3001/api',
 });
