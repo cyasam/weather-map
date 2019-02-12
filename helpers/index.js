@@ -25,5 +25,8 @@ export const googleMapInit = () =>
   });
 
 export const appReq = axios.create({
-  baseURL: process.env.baseURL || 'http://localhost:3001/api',
+  baseURL:
+    process.env.NODE_ENV === 'production'
+      ? process.env.API_BASE_URL
+      : 'http://localhost:3001/api',
 });
