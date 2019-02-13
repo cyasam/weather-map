@@ -7,7 +7,7 @@ class App extends Component {
   state = {
     map: null,
     mapCenter: {
-      lat: 51.026,
+      lat: 47.826,
       lon: 11.5551,
     },
     cities: [],
@@ -78,8 +78,8 @@ class App extends Component {
     this.setState({
       map: new google.maps.Map(document.getElementById('map'), {
         center: { lat, lng: lon },
-        zoom: 5,
-        minZoom: 5,
+        zoom: 6,
+        minZoom: 6,
         maxZoom: 6,
         streetViewControl: false,
         styles:
