@@ -1,39 +1,78 @@
 import { Component } from 'react';
 import { appReq, googleMapInit } from '../helpers';
-import cities from '../static/json/cities.json';
 import mapStyle from '../static/json/map-style.json';
 
 class App extends Component {
   state = {
+    level: 1,
+    zoom: 5,
     map: null,
     mapCenter: {
       lat: 47.826,
       lon: 11.5551,
     },
-    cities: [],
+    cities: null,
+    markers: [],
   };
-  componentDidMount() {
-    this.setState({
-      cities,
-    });
 
+  componentDidMount() {
     if (!this.state.map) {
       googleMapInit()
         .then(() => {
           return this.onLoadGoogleMapsScript();
         })
-        .then(responses => {
-          responses.forEach(response => {
-            if (response) {
-              const {
-                weather: [{ icon }],
-                coord: { lat, lon },
-              } = response.data;
-              this.createMarkers({ lat, lon, icon });
-            }
-          });
+        .then(response => {
+          const { data } = response;
+          this.loadMapData(data);
+
+          this.initZoomChanged();
         });
     }
+  }
+
+  loadMapData(data) {
+    const levelLabel = this.getLevelLabel();
+
+    if (data[levelLabel]) {
+      this.setCitiesData(data);
+      this.initMarkers(data);
+    }
+  }
+
+  getLevelLabel() {
+    const { level } = this.state;
+    return `level${level}`;
+  }
+
+  setCitiesData(data) {
+    const levelLabel = this.getLevelLabel();
+    this.setState(({ cities }) => ({
+      cities: {
+        [levelLabel]: data[levelLabel],
+        ...cities,
+      },
+    }));
+  }
+
+  initMarkers(data) {
+    const levelLabel = this.getLevelLabel();
+    const createdMarkers = data[this.getLevelLabel()].map(city => {
+      if (city) {
+        const {
+          weather: [{ icon }],
+          coord: { lat, lon },
+        } = city;
+
+        return this.createMarkers({ lat, lon, icon });
+      }
+    });
+
+    this.setState(({ markers }) => ({
+      markers: {
+        [levelLabel]: createdMarkers,
+        ...markers,
+      },
+    }));
   }
 
   createMarkers({ lat, lon, icon }) {
@@ -43,34 +82,35 @@ class App extends Component {
       height: 50,
     };
 
-    const city = cities.find(city => {
-      return (
-        Number(city.lat.toFixed(2)) === lat &&
-        Number(city.lon.toFixed(2)) === lon &&
-        city.markerOffset
-      );
-    });
-
-    const markerOffset = city ? city.markerOffset : 0;
-
     const iconObj = {
       url: `${iconBase}/${icon}.png`,
-      anchor: new google.maps.Point(
-        iconSize.width / 2,
-        iconSize.width + 6 + markerOffset,
-      ),
+      anchor: new google.maps.Point(iconSize.width / 2, iconSize.width + 6),
     };
 
     // Create markers.
-    const marker = new google.maps.Marker({
+    return new google.maps.Marker({
       position: new google.maps.LatLng(lat, lon),
       icon: iconObj,
       map: this.state.map,
     });
   }
 
+  setStatusMarkers(map) {
+    const { markers, level } = this.state;
+
+    const difference = map ? -1 : 0;
+
+    for (let i = level + difference; i < Object.keys(markers).length; i++) {
+      const nextLevel = i + 1;
+
+      for (let j = 0; j < markers[`level${nextLevel}`].length; j++) {
+        markers[`level${nextLevel}`][j].setMap(map);
+      }
+    }
+  }
+
   onLoadGoogleMapsScript() {
-    const { mapCenter, cities } = this.state;
+    const { mapCenter, zoom } = this.state;
     const { lat, lon } = mapCenter;
 
     const nowHour = new Date().getHours();
@@ -78,9 +118,9 @@ class App extends Component {
     this.setState({
       map: new google.maps.Map(document.getElementById('map'), {
         center: { lat, lng: lon },
-        zoom: 6,
-        minZoom: 6,
-        maxZoom: 6,
+        zoom,
+        minZoom: zoom,
+        maxZoom: zoom + 2,
         streetViewControl: false,
         styles:
           (nowHour >= 19 && nowHour <= 23) || (nowHour >= 0 && nowHour < 7)
@@ -89,11 +129,44 @@ class App extends Component {
       }),
     });
 
-    const promiseCities = cities.map(city => {
-      return appReq.get(`/get-weather?lat=${city.lat}&lon=${city.lon}`);
-    });
+    return this.getAllWeather();
+  }
 
-    return Promise.all(promiseCities);
+  getAllWeather() {
+    const { level } = this.state;
+    return appReq.get(`/get-all-weather?level=${level}`);
+  }
+
+  initZoomChanged() {
+    const { map } = this.state;
+
+    map.addListener('zoom_changed', () => {
+      const zoom = map.getZoom();
+      const difference = zoom - this.state.zoom;
+
+      this.setState(
+        prevState => ({
+          zoom,
+          level: prevState.level + difference,
+        }),
+        () => {
+          const { cities } = this.state;
+
+          if (!cities || !cities[this.getLevelLabel()]) {
+            this.getAllWeather().then(response => {
+              const { data } = response;
+              this.loadMapData(data);
+            });
+          } else {
+            if (difference < 0) {
+              this.setStatusMarkers(null);
+            } else {
+              this.setStatusMarkers(map);
+            }
+          }
+        },
+      );
+    });
   }
 
   render() {
