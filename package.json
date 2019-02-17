@@ -7,7 +7,7 @@
     "dev": "next",
     "build": "next build",
     "start": "next start",
-    "export": "npm run build && next export"
+    "export": "rimraf out .next && npm run build && next export"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "dotenv": "^6.2.0",
+    "rimraf": "^2.6.3",
     "webpack": "^4.29.3"
   }
 }
