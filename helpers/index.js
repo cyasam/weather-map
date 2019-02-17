@@ -30,3 +30,12 @@ export const appReq = axios.create({
       ? process.env.API_BASE_URL
       : 'http://localhost:3001/api',
 });
+
+export const isDay = () => {
+  const nowHour = new Date().getHours();
+  return nowHour < 19 && nowHour >= 7;
+};
+
+export const convertTempToC = temp => {
+  return Math.round(temp - 273.15);
+};

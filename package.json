@@ -21,6 +21,7 @@
   },
   "devDependencies": {
     "dotenv": "^6.2.0",
+    "markerwithlabel": "^2.0.2",
     "rimraf": "^2.6.3",
     "webpack": "^4.29.3"
   }
