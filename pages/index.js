@@ -149,15 +149,12 @@ class App extends Component {
 
   setStatusMarkers(map) {
     const { markers, level } = this.state;
+    const difference = map ? 0 : 1;
+    const nextLevel = level + difference;
+    console.log(nextLevel, difference);
 
-    const difference = map ? -1 : 0;
-
-    for (let i = level + difference; i < Object.keys(markers).length; i++) {
-      const nextLevel = i + 1;
-
-      for (let j = 0; j < markers[`level${nextLevel}`].length; j++) {
-        markers[`level${nextLevel}`][j].setMap(map);
-      }
+    if (nextLevel <= Object.keys(markers).length) {
+      markers[`level${nextLevel}`].forEach(marker => marker.setMap(map));
     }
   }
 
@@ -191,28 +188,25 @@ class App extends Component {
       const zoom = map.getZoom();
       const difference = zoom - this.state.zoom;
 
-      this.setState(
-        prevState => ({
-          zoom,
-          level: prevState.level + difference,
-        }),
-        () => {
-          const { cities } = this.state;
+      this.setState(prevState => ({
+        zoom,
+        level: prevState.level + difference,
+      }));
 
-          if (!cities || !cities[this.getLevelLabel()]) {
-            this.getAllWeather().then(response => {
-              const { data } = response;
-              this.loadMapData(data);
-            });
-          } else {
-            if (difference < 0) {
-              this.setStatusMarkers(null);
-            } else {
-              this.setStatusMarkers(map);
-            }
-          }
-        },
-      );
+      const { cities } = this.state;
+
+      if (!cities || !cities[this.getLevelLabel()]) {
+        this.getAllWeather().then(response => {
+          const { data } = response;
+          this.loadMapData(data);
+        });
+      } else {
+        if (difference < 0) {
+          this.setStatusMarkers(null);
+        } else if (difference > 0) {
+          this.setStatusMarkers(map);
+        }
+      }
     });
   }
 
