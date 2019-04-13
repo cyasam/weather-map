@@ -39,3 +39,9 @@ export const isDay = () => {
 export const convertTempToC = temp => {
   return Math.round(temp - 273.15);
 };
+
+export const WeatherApi = {
+  getAllWeather(level) {
+    return appReq.get(`/get-all-weather?level=${level}`);
+  },
+};
